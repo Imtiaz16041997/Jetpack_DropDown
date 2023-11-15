@@ -1,0 +1,81 @@
+package com.imtiaz.jetpackdropdown
+
+import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DropDownWithSnackBar() {
+    val countryName = arrayOf("USA", "BD", "In", "GR", "ARG", "BR")
+    val selectedText = remember { mutableStateOf("") }
+    val expandedState = remember { mutableStateOf(false) }
+    val snackBarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedText.value) {
+        // Inside this block, coroutineScope is tied to the lifecycle of the composable
+        coroutineScope.launch {
+            if (selectedText.value.isNotEmpty()) {
+                snackBarHostState.showSnackbar("Selected: ${selectedText.value}")
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackBarHostState,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp)
+        ) {
+            ExposedDropdownMenuBox(expanded = expandedState.value, onExpandedChange = {
+                expandedState.value = !expandedState.value
+            }) {
+                TextField(
+                    value = if (selectedText.value.isEmpty()) "Select a country" else selectedText.value,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedState.value)
+                    },
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(expanded = expandedState.value,
+                    onDismissRequest = { expandedState.value = false }) {
+                    countryName.forEach {
+                        DropdownMenuItem(text = { Text(text = it) }, onClick = {
+                            selectedText.value = it
+                            expandedState.value = false
+                        })
+                    }
+                }
+            }
+        }
+    }
+}
